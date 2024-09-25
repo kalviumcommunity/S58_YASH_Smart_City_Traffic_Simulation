@@ -100,12 +100,12 @@ int main() {
     };
 
     // Create an array of TrafficLight objects
-    // const int numTrafficLights = 3;
-    // TrafficLight trafficLights[numTrafficLights] = {
-    //     TrafficLight(1),
-    //     TrafficLight(2),
-    //     TrafficLight(3)
-    // };
+    const int numTrafficLights = 3;
+    TrafficLight trafficLights[numTrafficLights] = {
+        TrafficLight(1),
+        TrafficLight(2),
+        TrafficLight(3)
+    };
 
     // Create a road
     Road road("Main Street", 1000, 2);
@@ -132,17 +132,16 @@ int main() {
         }
 
         // Change traffic lights to yellow for the first 5 iterations, then to green
-    //     for (int j = 0; j < numTrafficLights; j++) {
-    //         if (i < 5) {
-    //             trafficLights[j].change_state("yellow");
-    //         } else {
-    //             trafficLights[j].change_state("green");
-    //         }
+        for (int j = 0; j < numTrafficLights; j++) {
+            if (i < 5) {
+                trafficLights[j].change_state("yellow");
+            } else {
+                trafficLights[j].change_state("green");
+            }
 
-    //         std::cout << "Traffic light " << (j + 1) << " state: " << trafficLights[j].getState() << std::endl;
-    //     }
-    // }
-
+            std::cout << "Traffic light " << (j + 1) << " state: " << trafficLights[j].getState() << std::endl;
+        }
+    }
 
 
 
