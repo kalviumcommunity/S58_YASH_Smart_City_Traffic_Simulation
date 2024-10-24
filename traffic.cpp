@@ -4,7 +4,16 @@
 
 class Vehicle {
 public:
-    Vehicle(int id, int speed) : id(id), speed(speed), position(0) {}
+    // Static variable to track total number of vehicles
+    static int totalVehicles;
+
+    Vehicle(int id, int speed) : id(id), speed(speed), position(0) {
+        totalVehicles++;  // Increment static vehicle count whenever a vehicle is created
+    }
+
+    ~Vehicle() {
+        totalVehicles--;  // Decrement static vehicle count when a vehicle is destroyed
+    }
 
     void move(int distance) {
         if (speed > 0) {
@@ -35,15 +44,32 @@ public:
         return id == other.id;
     }
 
+    // Static method to get the total vehicle count
+    static int getTotalVehicles() {
+        return totalVehicles;
+    }
+
 private:
     int id;
     int speed;
     int position;
 };
 
+// Initialize static variable
+int Vehicle::totalVehicles = 0;
+
 class TrafficLight {
 public:
-    TrafficLight(int id) : id(id), state("green") {}
+    // Static variable to track total number of traffic lights
+    static int totalTrafficLights;
+
+    TrafficLight(int id) : id(id), state("green") {
+        totalTrafficLights++;  // Increment static traffic light count whenever one is created
+    }
+
+    ~TrafficLight() {
+        totalTrafficLights--;  // Decrement static traffic light count when one is destroyed
+    }
 
     void change_state(std::string state) {
         this->state = state;
@@ -53,10 +79,18 @@ public:
         return state;
     }
 
+    // Static method to get the total traffic light count
+    static int getTotalTrafficLights() {
+        return totalTrafficLights;
+    }
+
 private:
     int id;
     std::string state;
 };
+
+// Initialize static variable
+int TrafficLight::totalTrafficLights = 0;
 
 class Road {
 public:
@@ -136,6 +170,10 @@ int main() {
             std::cout << "Traffic light " << (j + 1) << " state: " << trafficLights[j].getState() << std::endl;
         }
     }
+
+    // Display total number of vehicles and traffic lights created
+    std::cout << "\nTotal vehicles created: " << Vehicle::getTotalVehicles() << std::endl;
+    std::cout << "Total traffic lights created: " << TrafficLight::getTotalTrafficLights() << std::endl;
 
     // Clean up dynamic memory
     delete[] vehicles;
