@@ -2,13 +2,10 @@
 #include <string>
 #include <vector>
 
-
-
-
 class Vehicle {
 public:
     Vehicle(int id, int speed) : id(id), speed(speed), position(0) {}
-    
+
     void move(int distance) {
         if (speed > 0) {
             position += distance;
@@ -19,9 +16,6 @@ public:
         speed = 0;
         std::cout << "Vehicle " << id << " has stopped at position " << position << std::endl;
     }
-
-
-
 
     // New speedUp function
     void speedUp(int increment) {
@@ -50,7 +44,7 @@ private:
 class TrafficLight {
 public:
     TrafficLight(int id) : id(id), state("green") {}
-    
+
     void change_state(std::string state) {
         this->state = state;
     }
@@ -68,13 +62,13 @@ class Road {
 public:
     Road(std::string name, int length, int lanes) : name(name), length(length), lanes(lanes) {}
 
-    void add_vehicle(Vehicle vehicle) {
+    void add_vehicle(Vehicle* vehicle) {
         vehicles.push_back(vehicle);
     }
 
-    void remove_vehicle(Vehicle vehicle) {
+    void remove_vehicle(Vehicle* vehicle) {
         for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-            if (*it == vehicle) {
+            if (**it == *vehicle) {
                 vehicles.erase(it);
                 break;
             }
@@ -85,13 +79,13 @@ private:
     std::string name;
     int length;
     int lanes;
-    std::vector<Vehicle> vehicles;
+    std::vector<Vehicle*> vehicles;
 };
 
 int main() {
-    // Create an array of Vehicle objects
+    // Dynamic memory allocation for array of Vehicle objects
     const int numVehicles = 5;
-    Vehicle vehicles[numVehicles] = {
+    Vehicle* vehicles = new Vehicle[numVehicles] {
         Vehicle(1, 50),
         Vehicle(2, 30),
         Vehicle(3, 40),
@@ -99,9 +93,9 @@ int main() {
         Vehicle(5, 60)
     };
 
-    // Create an array of TrafficLight objects
+    // Dynamic memory allocation for array of TrafficLight objects
     const int numTrafficLights = 3;
-    TrafficLight trafficLights[numTrafficLights] = {
+    TrafficLight* trafficLights = new TrafficLight[numTrafficLights] {
         TrafficLight(1),
         TrafficLight(2),
         TrafficLight(3)
@@ -110,15 +104,15 @@ int main() {
     // Create a road
     Road road("Main Street", 1000, 2);
 
-    // Add vehicles to the road (using array of Vehicle objects)
+    // Add vehicles to the road (using dynamic array of Vehicle objects)
     for (int i = 0; i < numVehicles; i++) {
-        road.add_vehicle(vehicles[i]);
+        road.add_vehicle(&vehicles[i]);
     }
 
     // Simulate traffic flow
     for (int i = 0; i < 10; i++) {
         std::cout << "\nSimulation Step " << i + 1 << ":\n";
-        
+
         // Move each vehicle and increase speed for each vehicle
         for (int j = 0; j < numVehicles; j++) {
             if (vehicles[j].getPosition() < 50) {
@@ -143,7 +137,9 @@ int main() {
         }
     }
 
-
+    // Clean up dynamic memory
+    delete[] vehicles;
+    delete[] trafficLights;
 
     return 0;
 }
