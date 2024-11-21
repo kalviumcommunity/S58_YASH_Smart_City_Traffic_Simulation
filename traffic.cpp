@@ -2,19 +2,25 @@
 #include <string>
 #include <vector>
 
+// Enum for traffic light states to ensure strict control
+enum class TrafficLightState { Red, Yellow, Green };
+
 class Vehicle {
 public:
     Vehicle(int id, int speed) : id(id), speed(speed), position(0) {
         ++vehicleCount;  // Increment the static vehicle count when a new vehicle is created
     }
-    
+
     ~Vehicle() {
         --vehicleCount;  // Decrement the static vehicle count when a vehicle is destroyed
     }
 
+    // Public interface for moving the vehicle
     void move(int distance) {
-        if (speed > 0) {
+        if (distance > 0 && speed > 0) {
             position += distance;
+        } else {
+            std::cerr << "Invalid move operation for Vehicle " << id << "\n";
         }
     }
 
@@ -24,10 +30,15 @@ public:
     }
 
     void speedUp(int increment) {
-        speed += increment;
-        std::cout << "Vehicle " << id << " speed increased to " << speed << " km/h\n";
+        if (increment > 0) {
+            speed += increment;
+            std::cout << "Vehicle " << id << " speed increased to " << speed << " km/h\n";
+        } else {
+            std::cerr << "Invalid speed increment for Vehicle " << id << "\n";
+        }
     }
 
+    // Getters (No direct access to private members)
     int getPosition() const {
         return position;
     }
@@ -36,10 +47,15 @@ public:
         return speed;
     }
 
+    int getId() const {
+        return id;
+    }
+
     static int getVehicleCount() {
         return vehicleCount;
     }
 
+    // Operator to compare vehicles by their ID
     bool operator==(const Vehicle& other) const {
         return id == other.id;
     }
@@ -58,30 +74,37 @@ int Vehicle::vehicleCount = 0;
 
 class TrafficLight {
 public:
-    TrafficLight(int id) : id(id), state("green") {}
+    TrafficLight(int id) : id(id), state(TrafficLightState::Green) {}
 
-    void change_state(std::string state) {
-        this->state = state;
+    // Change the state of the traffic light
+    void changeState(TrafficLightState newState) {
+        state = newState;
     }
 
-    std::string getState() const {
+    // Get the current state
+    TrafficLightState getState() const {
         return state;
     }
 
 private:
     int id;
-    std::string state;
+    TrafficLightState state;
 };
 
 class Road {
 public:
-    Road(std::string name, int length, int lanes) : name(name), length(length), lanes(lanes) {}
+    Road(std::string name, int length, int lanes) 
+        : name(std::move(name)), length(length), lanes(lanes) {}
 
-    void add_vehicle(Vehicle* vehicle) {
-        vehicles.push_back(vehicle);
+    void addVehicle(Vehicle* vehicle) {
+        if (vehicle) {
+            vehicles.push_back(vehicle);
+        } else {
+            std::cerr << "Invalid vehicle to add on the road.\n";
+        }
     }
 
-    void remove_vehicle(Vehicle* vehicle) {
+    void removeVehicle(Vehicle* vehicle) {
         for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
             if (*it == vehicle) {
                 vehicles.erase(it);
@@ -121,7 +144,7 @@ int main() {
 
     // Add vehicles to the road
     for (int i = 0; i < numVehicles; i++) {
-        road.add_vehicle(&vehicles[i]);
+        road.addVehicle(&vehicles[i]);
     }
 
     // Print the total number of vehicles using the static member function
@@ -135,7 +158,8 @@ int main() {
         for (int j = 0; j < numVehicles; j++) {
             if (vehicles[j].getPosition() < 50) {
                 vehicles[j].move(10);  // Move by 10 units
-                std::cout << "Vehicle " << (j + 1) << " position: " << vehicles[j].getPosition() << std::endl;
+                std::cout << "Vehicle " << vehicles[j].getId() 
+                          << " position: " << vehicles[j].getPosition() << std::endl;
 
                 vehicles[j].speedUp(5);  // Speed up by 5 km/h
             } else {
@@ -146,11 +170,13 @@ int main() {
         // Change traffic light states
         for (int j = 0; j < numTrafficLights; j++) {
             if (i < 5) {
-                trafficLights[j].change_state("yellow");
+                trafficLights[j].changeState(TrafficLightState::Yellow);
             } else {
-                trafficLights[j].change_state("green");
+                trafficLights[j].changeState(TrafficLightState::Green);
             }
-            std::cout << "Traffic light " << (j + 1) << " state: " << trafficLights[j].getState() << std::endl;
+            std::cout << "Traffic light " << (j + 1) 
+                      << " state: " << (trafficLights[j].getState() == TrafficLightState::Yellow ? "Yellow" : "Green") 
+                      << std::endl;
         }
     }
 
