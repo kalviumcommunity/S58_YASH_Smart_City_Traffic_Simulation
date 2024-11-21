@@ -1,63 +1,58 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory> // For smart pointers
 
-// Enum for traffic light states to ensure strict control
+// Enum for traffic light states
 enum class TrafficLightState { Red, Yellow, Green };
 
-class Vehicle {
+// Abstract base class for movable entities
+class MovableEntity {
+public:
+    virtual void move(int distance) = 0; // Pure virtual function
+    virtual void stop() = 0;
+    virtual int getPosition() const = 0;
+    virtual int getId() const = 0;
+    virtual ~MovableEntity() = default;
+};
+
+// Vehicle class inherits from MovableEntity
+class Vehicle : public MovableEntity {
 public:
     Vehicle(int id, int speed) : id(id), speed(speed), position(0) {
-        ++vehicleCount;  // Increment the static vehicle count when a new vehicle is created
+        ++vehicleCount;
     }
 
     ~Vehicle() {
-        --vehicleCount;  // Decrement the static vehicle count when a vehicle is destroyed
+        --vehicleCount;
     }
 
-    // Public interface for moving the vehicle
-    void move(int distance) {
-        if (distance > 0 && speed > 0) {
+    void move(int distance) override {
+        if (speed > 0) {
             position += distance;
-        } else {
-            std::cerr << "Invalid move operation for Vehicle " << id << "\n";
         }
     }
 
-    void stop() {
+    void stop() override {
         speed = 0;
-        std::cout << "Vehicle " << id << " has stopped at position " << position << std::endl;
+        std::cout << "Vehicle " << id << " has stopped at position " << position << ".\n";
     }
 
-    void speedUp(int increment) {
-        if (increment > 0) {
-            speed += increment;
-            std::cout << "Vehicle " << id << " speed increased to " << speed << " km/h\n";
-        } else {
-            std::cerr << "Invalid speed increment for Vehicle " << id << "\n";
-        }
-    }
-
-    // Getters (No direct access to private members)
-    int getPosition() const {
+    int getPosition() const override {
         return position;
     }
 
-    int getSpeed() const {
-        return speed;
+    int getId() const override {
+        return id;
     }
 
-    int getId() const {
-        return id;
+    void accelerate(int increment) {
+        speed += increment;
+        std::cout << "Vehicle " << id << " accelerated to " << speed << " km/h.\n";
     }
 
     static int getVehicleCount() {
         return vehicleCount;
-    }
-
-    // Operator to compare vehicles by their ID
-    bool operator==(const Vehicle& other) const {
-        return id == other.id;
     }
 
 private:
@@ -65,25 +60,27 @@ private:
     int speed;
     int position;
 
-    // Static member to track the number of vehicles
-    static int vehicleCount;
+    static int vehicleCount; // Static member to count vehicles
 };
 
-// Initialize the static variable
+// Initialize the static member
 int Vehicle::vehicleCount = 0;
 
+// TrafficLight class
 class TrafficLight {
 public:
     TrafficLight(int id) : id(id), state(TrafficLightState::Green) {}
 
-    // Change the state of the traffic light
     void changeState(TrafficLightState newState) {
         state = newState;
     }
 
-    // Get the current state
     TrafficLightState getState() const {
         return state;
+    }
+
+    int getId() const {
+        return id;
     }
 
 private:
@@ -91,98 +88,95 @@ private:
     TrafficLightState state;
 };
 
-class Road {
+// Abstract base class for simulation management
+class SimulationManager {
 public:
-    Road(std::string name, int length, int lanes) 
-        : name(std::move(name)), length(length), lanes(lanes) {}
+    virtual void simulateStep() = 0; // Pure virtual function
+    virtual ~SimulationManager() = default;
+};
 
-    void addVehicle(Vehicle* vehicle) {
-        if (vehicle) {
-            vehicles.push_back(vehicle);
-        } else {
-            std::cerr << "Invalid vehicle to add on the road.\n";
-        }
+// Concrete TrafficSimulation class
+class TrafficSimulation : public SimulationManager {
+public:
+    TrafficSimulation(const std::string& roadName, int roadLength, int lanes)
+        : roadName(roadName), roadLength(roadLength), lanes(lanes) {}
+
+    void addVehicle(std::shared_ptr<MovableEntity> vehicle) {
+        vehicles.push_back(vehicle);
     }
 
-    void removeVehicle(Vehicle* vehicle) {
-        for (auto it = vehicles.begin(); it != vehicles.end(); ++it) {
-            if (*it == vehicle) {
-                vehicles.erase(it);
-                break;
+    void addTrafficLight(std::shared_ptr<TrafficLight> trafficLight) {
+        trafficLights.push_back(trafficLight);
+    }
+
+    void simulateStep() override {
+        static int step = 1;
+
+        std::cout << "\n--- Simulation Step " << step << " ---\n";
+
+        // Move vehicles and simulate actions
+        for (auto& vehicle : vehicles) {
+            if (vehicle->getPosition() < roadLength / 2) {
+                vehicle->move(10); // Move by 10 units
+                std::cout << "Vehicle " << vehicle->getId()
+                          << " moved to position " << vehicle->getPosition() << ".\n";
+            } else {
+                vehicle->stop(); // Stop if position >= roadLength / 2
             }
         }
+
+        // Manage traffic light states
+        for (auto& light : trafficLights) {
+            TrafficLightState newState = (step % 5 == 0) ? TrafficLightState::Yellow : TrafficLightState::Green;
+            light->changeState(newState);
+
+            std::cout << "Traffic Light " << light->getId()
+                      << " is now " << (newState == TrafficLightState::Yellow ? "Yellow" : "Green") << ".\n";
+        }
+
+        ++step;
     }
 
 private:
-    std::string name;
-    int length;
+    std::string roadName;
+    int roadLength;
     int lanes;
-    std::vector<Vehicle*> vehicles;
+    std::vector<std::shared_ptr<MovableEntity>> vehicles;
+    std::vector<std::shared_ptr<TrafficLight>> trafficLights;
 };
 
+// Main function
 int main() {
-    // Create an array of Vehicle objects using dynamic memory
-    const int numVehicles = 5;
-    Vehicle* vehicles = new Vehicle[numVehicles] {
-        Vehicle(1, 50),
-        Vehicle(2, 30),
-        Vehicle(3, 40),
-        Vehicle(4, 20),
-        Vehicle(5, 60)
+    // Use smart pointers to manage memory
+    std::vector<std::shared_ptr<MovableEntity>> vehicles = {
+        std::make_shared<Vehicle>(1, 50),
+        std::make_shared<Vehicle>(2, 30),
+        std::make_shared<Vehicle>(3, 40),
+        std::make_shared<Vehicle>(4, 20),
+        std::make_shared<Vehicle>(5, 60),
     };
 
-    // Create an array of TrafficLight objects using dynamic memory
-    const int numTrafficLights = 3;
-    TrafficLight* trafficLights = new TrafficLight[numTrafficLights] {
-        TrafficLight(1),
-        TrafficLight(2),
-        TrafficLight(3)
+    std::vector<std::shared_ptr<TrafficLight>> trafficLights = {
+        std::make_shared<TrafficLight>(1),
+        std::make_shared<TrafficLight>(2),
+        std::make_shared<TrafficLight>(3),
     };
 
-    // Create a road
-    Road road("Main Street", 1000, 2);
+    // Create a traffic simulation
+    TrafficSimulation simulation("Main Street", 1000, 2);
 
-    // Add vehicles to the road
-    for (int i = 0; i < numVehicles; i++) {
-        road.addVehicle(&vehicles[i]);
+    // Add vehicles and traffic lights to the simulation
+    for (const auto& vehicle : vehicles) {
+        simulation.addVehicle(vehicle);
+    }
+    for (const auto& light : trafficLights) {
+        simulation.addTrafficLight(light);
     }
 
-    // Print the total number of vehicles using the static member function
-    std::cout << "Total number of vehicles: " << Vehicle::getVehicleCount() << std::endl;
-
-    // Simulate traffic flow
-    for (int i = 0; i < 10; i++) {
-        std::cout << "\nSimulation Step " << i + 1 << ":\n";
-
-        // Move each vehicle and increase speed
-        for (int j = 0; j < numVehicles; j++) {
-            if (vehicles[j].getPosition() < 50) {
-                vehicles[j].move(10);  // Move by 10 units
-                std::cout << "Vehicle " << vehicles[j].getId() 
-                          << " position: " << vehicles[j].getPosition() << std::endl;
-
-                vehicles[j].speedUp(5);  // Speed up by 5 km/h
-            } else {
-                vehicles[j].stop();  // Stop if position >= 50
-            }
-        }
-
-        // Change traffic light states
-        for (int j = 0; j < numTrafficLights; j++) {
-            if (i < 5) {
-                trafficLights[j].changeState(TrafficLightState::Yellow);
-            } else {
-                trafficLights[j].changeState(TrafficLightState::Green);
-            }
-            std::cout << "Traffic light " << (j + 1) 
-                      << " state: " << (trafficLights[j].getState() == TrafficLightState::Yellow ? "Yellow" : "Green") 
-                      << std::endl;
-        }
+    // Run the simulation for 10 steps
+    for (int i = 0; i < 10; ++i) {
+        simulation.simulateStep();
     }
-
-    // Clean up dynamically allocated memory
-    delete[] vehicles;
-    delete[] trafficLights;
 
     return 0;
 }
