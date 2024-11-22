@@ -19,12 +19,16 @@ public:
 // Vehicle class inherits from MovableEntity
 class Vehicle : public MovableEntity {
 public:
+    // Constructor
     Vehicle(int id, int speed) : id(id), speed(speed), position(0) {
         ++vehicleCount;
+        std::cout << "Vehicle " << id << " created with speed " << speed << " km/h.\n";
     }
 
+    // Destructor
     ~Vehicle() {
         --vehicleCount;
+        std::cout << "Vehicle " << id << " destroyed.\n";
     }
 
     void move(int distance) override {
@@ -69,7 +73,17 @@ int Vehicle::vehicleCount = 0;
 // TrafficLight class
 class TrafficLight {
 public:
-    TrafficLight(int id) : id(id), state(TrafficLightState::Green) {}
+    // Constructor
+    TrafficLight(int id, TrafficLightState initialState = TrafficLightState::Green)
+        : id(id), state(initialState) {
+        std::cout << "Traffic Light " << id << " created with initial state "
+                  << (state == TrafficLightState::Green ? "Green" : "Other") << ".\n";
+    }
+
+    // Destructor
+    ~TrafficLight() {
+        std::cout << "Traffic Light " << id << " destroyed.\n";
+    }
 
     void changeState(TrafficLightState newState) {
         state = newState;
@@ -98,8 +112,17 @@ public:
 // Concrete TrafficSimulation class
 class TrafficSimulation : public SimulationManager {
 public:
+    // Constructor
     TrafficSimulation(const std::string& roadName, int roadLength, int lanes)
-        : roadName(roadName), roadLength(roadLength), lanes(lanes) {}
+        : roadName(roadName), roadLength(roadLength), lanes(lanes) {
+        std::cout << "TrafficSimulation created for road: " << roadName
+                  << " with length " << roadLength << " and " << lanes << " lanes.\n";
+    }
+
+    // Destructor
+    ~TrafficSimulation() {
+        std::cout << "TrafficSimulation for road " << roadName << " destroyed.\n";
+    }
 
     void addVehicle(std::shared_ptr<MovableEntity> vehicle) {
         vehicles.push_back(vehicle);
