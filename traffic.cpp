@@ -1,10 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <memory> // For smart pointers
-
-// Enum for traffic light states
-enum class TrafficLightState { Red, Yellow, Green };
+#include <memory>
 
 // Abstract base class for movable entities
 class MovableEntity {
@@ -13,20 +10,19 @@ public:
     virtual void stop() = 0;
     virtual int getPosition() const = 0;
     virtual int getId() const = 0;
+    virtual void accelerate(int increment) = 0; // Added to base class
     virtual ~MovableEntity() = default;
 };
 
 // Vehicle class inherits from MovableEntity
 class Vehicle : public MovableEntity {
 public:
-    // Constructor
     Vehicle(int id, int speed) : id(id), speed(speed), position(0) {
         ++vehicleCount;
         std::cout << "Vehicle " << id << " created with speed " << speed << " km/h.\n";
     }
 
-    // Destructor
-    ~Vehicle() {
+    virtual ~Vehicle() {
         --vehicleCount;
         std::cout << "Vehicle " << id << " destroyed.\n";
     }
@@ -50,7 +46,7 @@ public:
         return id;
     }
 
-    void accelerate(int increment) {
+    virtual void accelerate(int increment) override { // Implement in base class
         speed += increment;
         std::cout << "Vehicle " << id << " accelerated to " << speed << " km/h.\n";
     }
@@ -59,147 +55,55 @@ public:
         return vehicleCount;
     }
 
-private:
+protected:
     int id;
     int speed;
     int position;
 
+private:
     static int vehicleCount; // Static member to count vehicles
 };
 
-// Initialize the static member
+// Initialize static member
 int Vehicle::vehicleCount = 0;
 
-// TrafficLight class
-class TrafficLight {
+// Car class inherits from Vehicle
+class Car : public Vehicle {
 public:
-    // Constructor
-    TrafficLight(int id, TrafficLightState initialState = TrafficLightState::Green)
-        : id(id), state(initialState) {
-        std::cout << "Traffic Light " << id << " created with initial state "
-                  << (state == TrafficLightState::Green ? "Green" : "Other") << ".\n";
+    Car(int id, int speed) : Vehicle(id, speed) {
+        std::cout << "Car " << id << " created.\n";
     }
 
-    // Destructor
-    ~TrafficLight() {
-        std::cout << "Traffic Light " << id << " destroyed.\n";
+    ~Car() override {
+        std::cout << "Car " << id << " destroyed.\n";
     }
 
-    void changeState(TrafficLightState newState) {
-        state = newState;
+    void move(int distance) override {
+        Vehicle::move(distance);
+        std::cout << "Car " << id << " moved quickly to position " << position << ".\n";
     }
 
-    TrafficLightState getState() const {
-        return state;
+    void accelerate(int increment) override { // Override the virtual accelerate
+        speed += increment * 2; // Cars accelerate faster
+        std::cout << "Car " << id << " accelerated to " << speed << " km/h.\n";
     }
-
-    int getId() const {
-        return id;
-    }
-
-private:
-    int id;
-    TrafficLightState state;
-};
-
-// Abstract base class for simulation management
-class SimulationManager {
-public:
-    virtual void simulateStep() = 0; // Pure virtual function
-    virtual ~SimulationManager() = default;
-};
-
-// Concrete TrafficSimulation class
-class TrafficSimulation : public SimulationManager {
-public:
-    // Constructor
-    TrafficSimulation(const std::string& roadName, int roadLength, int lanes)
-        : roadName(roadName), roadLength(roadLength), lanes(lanes) {
-        std::cout << "TrafficSimulation created for road: " << roadName
-                  << " with length " << roadLength << " and " << lanes << " lanes.\n";
-    }
-
-    // Destructor
-    ~TrafficSimulation() {
-        std::cout << "TrafficSimulation for road " << roadName << " destroyed.\n";
-    }
-
-    void addVehicle(std::shared_ptr<MovableEntity> vehicle) {
-        vehicles.push_back(vehicle);
-    }
-
-    void addTrafficLight(std::shared_ptr<TrafficLight> trafficLight) {
-        trafficLights.push_back(trafficLight);
-    }
-
-    void simulateStep() override {
-        static int step = 1;
-
-        std::cout << "\n--- Simulation Step " << step << " ---\n";
-
-        // Move vehicles and simulate actions
-        for (auto& vehicle : vehicles) {
-            if (vehicle->getPosition() < roadLength / 2) {
-                vehicle->move(10); // Move by 10 units
-                std::cout << "Vehicle " << vehicle->getId()
-                          << " moved to position " << vehicle->getPosition() << ".\n";
-            } else {
-                vehicle->stop(); // Stop if position >= roadLength / 2
-            }
-        }
-
-        // Manage traffic light states
-        for (auto& light : trafficLights) {
-            TrafficLightState newState = (step % 5 == 0) ? TrafficLightState::Yellow : TrafficLightState::Green;
-            light->changeState(newState);
-
-            std::cout << "Traffic Light " << light->getId()
-                      << " is now " << (newState == TrafficLightState::Yellow ? "Yellow" : "Green") << ".\n";
-        }
-
-        ++step;
-    }
-
-private:
-    std::string roadName;
-    int roadLength;
-    int lanes;
-    std::vector<std::shared_ptr<MovableEntity>> vehicles;
-    std::vector<std::shared_ptr<TrafficLight>> trafficLights;
 };
 
 // Main function
 int main() {
-    // Use smart pointers to manage memory
     std::vector<std::shared_ptr<MovableEntity>> vehicles = {
-        std::make_shared<Vehicle>(1, 50),
-        std::make_shared<Vehicle>(2, 30),
-        std::make_shared<Vehicle>(3, 40),
-        std::make_shared<Vehicle>(4, 20),
-        std::make_shared<Vehicle>(5, 60),
+        std::make_shared<Car>(1, 50),
+        std::make_shared<Car>(2, 30),
+        std::make_shared<Car>(3, 40),
     };
 
-    std::vector<std::shared_ptr<TrafficLight>> trafficLights = {
-        std::make_shared<TrafficLight>(1),
-        std::make_shared<TrafficLight>(2),
-        std::make_shared<TrafficLight>(3),
-    };
-
-    // Create a traffic simulation
-    TrafficSimulation simulation("Main Street", 1000, 2);
-
-    // Add vehicles and traffic lights to the simulation
     for (const auto& vehicle : vehicles) {
-        simulation.addVehicle(vehicle);
-    }
-    for (const auto& light : trafficLights) {
-        simulation.addTrafficLight(light);
+        vehicle->move(10);
+        vehicle->accelerate(5); // Now valid since accelerate is in the base class
+        vehicle->stop();
     }
 
-    // Run the simulation for 10 steps
-    for (int i = 0; i < 10; ++i) {
-        simulation.simulateStep();
-    }
+    std::cout << "Total vehicles created: " << Vehicle::getVehicleCount() << "\n";
 
     return 0;
 }
